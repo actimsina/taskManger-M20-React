@@ -12,7 +12,9 @@ export default class Category extends Component {
             categories: [],
             config: {
                 headers: { 'Authorization': localStorage.getItem('token') }
-            }
+            },
+            isUpdate: false,
+            categoryId: ''
         }
     }
 
@@ -48,31 +50,97 @@ export default class Category extends Component {
             .then((res) => {
                 // console.log(res.data);
                 this.setState({
-                    categories: filteredCategories
+                    categories: filteredCategories,
+                    isUpdate: false,
+                    categoryName: ''
                 })
             }).catch((err) => console.log(err));
+    }
+
+    handleEdit = (categoryId) => {
+        this.setState({
+            categoryName: this.state.categories.find((category) => {
+                return categoryId === category._id;
+            }).name,
+            categoryId: categoryId,
+            isUpdate: true
+        });
+    }
+
+    handleUpdate = (e) => {
+        e.preventDefault();
+        console.log(this.state.categoryId);
+        Axios.put(`http://localhost:3001/api/categories/${this.state.categoryId}`,
+            { name: this.state.categoryName }
+            , this.state.config)
+            .then((res) => {
+                console.log(res)
+                const updatedCategories = this.state.categories.map((category) => {
+                    if (category._id === this.state.categoryId) {
+                        category.name = this.state.categoryName;
+                    }
+                    return category;
+                })
+                this.setState({
+                    isUpdate: false,
+                    categories: updatedCategories,
+                    categoryName: ''
+                })
+            }).catch(err => console.log(err.response));
+
+    }
+
+    handleCancel = () => {
+        this.setState({
+            isUpdate: false,
+            categoryName: ''
+        })
     }
 
     render() {
         return (
             <div className='container'>
-                <CategoryForm name={this.state.categoryName}
-                    handleChange={this.handleChange}
-                    handleSubmit={this.handleSubmit} />
+                {this.state.isUpdate ? (
+                    <EditCategoryForm name={this.state.categoryName}
+                        handleChange={this.handleChange}
+                        handleUpdate={this.handleUpdate}
+                        handleCancel={this.handleCancel} />
+                ) : (
+                        <AddCategoryForm name={this.state.categoryName}
+                            handleChange={this.handleChange}
+                            handleSubmit={this.handleSubmit}
+                        />
+                    )}
                 <hr />
                 <CategoryList categories={this.state.categories}
-                    handleDelete={this.handleDelete} />
+                    handleDelete={this.handleDelete}
+                    handleEdit={this.handleEdit} />
             </div>
         )
     }
 }
-function CategoryForm(props) {
+function AddCategoryForm(props) {
     return (
         <Form onSubmit={props.handleSubmit}>
             <Input type='text' placeholder='Add category ...'
                 value={props.name}
                 onChange={props.handleChange} />
-            <Button block className="mt-4">Add</Button>
+            <Button block className="mt-4" color="success">Add</Button>
+        </Form>
+    )
+}
+
+function EditCategoryForm(props) {
+    return (
+        <Form onSubmit={props.handleUpdate}>
+            <Input type='text' placeholder='Edit category ...'
+                value={props.name}
+                onChange={props.handleChange} />
+            <div className='mt-4'>
+                <Button color='warning' block>Update</Button>
+                <Button color='danger' block
+                    onClick={props.handleCancel}>Cancel</Button>
+            </div>
         </Form>
     )
 }
@@ -83,7 +151,8 @@ function CategoryList(props) {
             <ListGroup>
                 {
                     props.categories.map((category) => {
-                        return <ListGroupItem key={category._id}>{category.name}
+                        return <ListGroupItem key={category._id} onClick={() => props.handleEdit(category._id)}>
+                            {category.name}
                             <Button close onClick={() => props.handleDelete(category._id)} />
                         </ListGroupItem>
                     })
