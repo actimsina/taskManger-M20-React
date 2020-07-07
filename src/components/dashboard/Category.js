@@ -27,19 +27,48 @@ export default class Category extends Component {
     }
 
     handleChange = (e) => {
-        this.setState({ categoryName: e.target.value })
+        this.setState({ categoryName: e.target.value }, () => {
+            if (this.state.categoryName === '') {
+                this.setState({ isUpdate: false })
+            }
+        });
     }
 
     handleSubmit = (e) => {
         e.preventDefault();
-        Axios.post(`http://localhost:3001/api/categories`, { name: this.state.categoryName },
-            this.state.config)
-            .then((res) => {
-                this.setState({
-                    categories: [...this.state.categories, res.data],
-                    categoryName: ''
-                })
-            }).catch(err => console.log(err.response.data.message));
+        if (this.state.categoryName === '') {
+            this.setState({
+                isUpdate: false
+            })
+            return;
+        }
+        if (this.state.isUpdate === false) {
+            Axios.post(`http://localhost:3001/api/categories`, { name: this.state.categoryName },
+                this.state.config)
+                .then((res) => {
+                    this.setState({
+                        categories: [...this.state.categories, res.data],
+                        categoryName: ''
+                    })
+                }).catch(err => console.log(err.response.data.message));
+        } else {
+            Axios.put(`http://localhost:3001/api/categories/${this.state.categoryId}`,
+                { name: this.state.categoryName }, this.state.config)
+                .then((res) => {
+                    console.log(res)
+                    const updatedCategories = this.state.categories.map((category) => {
+                        if (category._id === this.state.categoryId) {
+                            category.name = this.state.categoryName;
+                        }
+                        return category;
+                    })
+                    this.setState({
+                        isUpdate: false,
+                        categories: updatedCategories,
+                        categoryName: ''
+                    })
+                }).catch(err => console.log(err.response));
+        }
     }
 
     handleDelete = (categoryId) => {
@@ -48,7 +77,6 @@ export default class Category extends Component {
         })
         Axios.delete(`http://localhost:3001/api/categories/${categoryId}`, this.state.config)
             .then((res) => {
-                // console.log(res.data);
                 this.setState({
                     categories: filteredCategories,
                     isUpdate: false,
@@ -67,50 +95,15 @@ export default class Category extends Component {
         });
     }
 
-    handleUpdate = (e) => {
-        e.preventDefault();
-        console.log(this.state.categoryId);
-        Axios.put(`http://localhost:3001/api/categories/${this.state.categoryId}`,
-            { name: this.state.categoryName }
-            , this.state.config)
-            .then((res) => {
-                console.log(res)
-                const updatedCategories = this.state.categories.map((category) => {
-                    if (category._id === this.state.categoryId) {
-                        category.name = this.state.categoryName;
-                    }
-                    return category;
-                })
-                this.setState({
-                    isUpdate: false,
-                    categories: updatedCategories,
-                    categoryName: ''
-                })
-            }).catch(err => console.log(err.response));
-
-    }
-
-    handleCancel = () => {
-        this.setState({
-            isUpdate: false,
-            categoryName: ''
-        })
-    }
-
     render() {
         return (
             <div className='container'>
-                {this.state.isUpdate ? (
-                    <EditCategoryForm name={this.state.categoryName}
-                        handleChange={this.handleChange}
-                        handleUpdate={this.handleUpdate}
-                        handleCancel={this.handleCancel} />
-                ) : (
-                        <AddCategoryForm name={this.state.categoryName}
-                            handleChange={this.handleChange}
-                            handleSubmit={this.handleSubmit}
-                        />
-                    )}
+                <CategoryForm
+                    name={this.state.categoryName}
+                    handleChange={this.handleChange}
+                    handleSubmit={this.handleSubmit}
+                    isUpdate={this.state.isUpdate} />
+
                 <hr />
                 <CategoryList categories={this.state.categories}
                     handleDelete={this.handleDelete}
@@ -119,31 +112,21 @@ export default class Category extends Component {
         )
     }
 }
-function AddCategoryForm(props) {
+function CategoryForm(props) {
     return (
         <Form onSubmit={props.handleSubmit}>
             <Input type='text' placeholder='Add category ...'
-                value={props.name}
-                onChange={props.handleChange} />
-            <Button block className="mt-4" color="success">Add</Button>
+                value={props.name} onChange={props.handleChange} className='mb-4' />
+            {props.isUpdate ? (
+                <Button size='sm' color='warning'>Update</Button>
+            ) : (
+                    <Button size='sm' color='primary'>Add</Button>
+                )}
+
         </Form>
     )
 }
 
-function EditCategoryForm(props) {
-    return (
-        <Form onSubmit={props.handleUpdate}>
-            <Input type='text' placeholder='Edit category ...'
-                value={props.name}
-                onChange={props.handleChange} />
-            <div className='mt-4'>
-                <Button color='warning' block>Update</Button>
-                <Button color='danger' block
-                    onClick={props.handleCancel}>Cancel</Button>
-            </div>
-        </Form>
-    )
-}
 
 function CategoryList(props) {
     return (
