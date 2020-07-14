@@ -3,10 +3,8 @@ import { Form, Input, Button, ListGroup, ListGroupItem } from 'reactstrap'
 import Axios from 'axios'
 
 export default class Category extends Component {
-
     constructor(props) {
         super(props)
-
         this.state = {
             categoryName: '',
             categories: [],
@@ -36,12 +34,7 @@ export default class Category extends Component {
 
     handleSubmit = (e) => {
         e.preventDefault();
-        if (this.state.categoryName === '') {
-            this.setState({
-                isUpdate: false
-            })
-            return;
-        }
+        if (this.state.categoryName === '') return;
         if (this.state.isUpdate === false) {
             Axios.post(`http://localhost:3001/api/categories`, { name: this.state.categoryName },
                 this.state.config)
@@ -72,17 +65,19 @@ export default class Category extends Component {
     }
 
     handleDelete = (categoryId) => {
-        const filteredCategories = this.state.categories.filter((category) => {
-            return category._id !== categoryId;
-        })
-        Axios.delete(`http://localhost:3001/api/categories/${categoryId}`, this.state.config)
-            .then((res) => {
-                this.setState({
-                    categories: filteredCategories,
-                    isUpdate: false,
-                    categoryName: ''
-                })
-            }).catch((err) => console.log(err));
+        if (window.confirm('Are you sure to delete?')) {
+            const filteredCategories = this.state.categories.filter((category) => {
+                return category._id !== categoryId;
+            })
+            Axios.delete(`http://localhost:3001/api/categories/${categoryId}`, this.state.config)
+                .then((res) => {
+                    this.setState({
+                        categories: filteredCategories,
+                        isUpdate: false,
+                        categoryName: ''
+                    })
+                }).catch((err) => console.log(err));
+        }
     }
 
     handleEdit = (categoryId) => {
@@ -114,15 +109,15 @@ export default class Category extends Component {
 }
 function CategoryForm(props) {
     return (
-        <Form onSubmit={props.handleSubmit}>
+        <Form onSubmit={props.handleSubmit} className='mt-5'>
             <Input type='text' placeholder='Add category ...'
                 value={props.name} onChange={props.handleChange} className='mb-4' />
-            {props.isUpdate ? (
+            {/* {props.isUpdate ? (
                 <Button size='sm' color='warning'>Update</Button>
             ) : (
                     <Button size='sm' color='primary'>Add</Button>
                 )}
-
+ */}
         </Form>
     )
 }
@@ -134,8 +129,8 @@ function CategoryList(props) {
             <ListGroup>
                 {
                     props.categories.map((category) => {
-                        return <ListGroupItem key={category._id} onClick={() => props.handleEdit(category._id)}>
-                            {category.name}
+                        return <ListGroupItem key={category._id}>
+                            <span onClick={() => props.handleEdit(category._id)}>{category.name}</span>
                             <Button close onClick={() => props.handleDelete(category._id)} />
                         </ListGroupItem>
                     })

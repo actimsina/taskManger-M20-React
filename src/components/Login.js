@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Form, FormGroup, Input, Button } from 'reactstrap'
 import axios from 'axios';
 import { Redirect } from 'react-router-dom';
+import jwtDecode from 'jwt-decode';
 
 export default class Login extends Component {
     constructor(props) {
@@ -10,7 +11,8 @@ export default class Login extends Component {
         this.state = {
             username: '',
             password: '',
-            isLoggedIn: false
+            isBasic: false,
+            isAdmin: false,
         }
     }
     handleChange = (event) => {
@@ -25,16 +27,18 @@ export default class Login extends Component {
             .then((res) => {
                 console.log(res);
                 localStorage.setItem('token', res.data.token);
-                this.setState({ isLoggedIn: true });
+                let user = jwtDecode(res.data.token.split(' ')[1]);
+                if (user.role === 'admin') this.setState({ isAdmin: true })
+                else this.setState({ isBasic: true })
             }).catch(err => console.log(err));
     }
 
     render() {
-
-        if (this.state.isLoggedIn) {
-            return <Redirect to='/dashboard' />
+        if (this.state.isAdmin) {
+            return <Redirect to='/admin' />
+        } else if (this.state.isBasic) {
+            return <Redirect to='/dash' />
         }
-
         return (
             <div className='container'>
                 <Form onSubmit={this.handleSubmit}>
@@ -50,7 +54,7 @@ export default class Login extends Component {
                             value={this.state.password}
                             onChange={this.handleChange} />
                     </FormGroup>
-                    <Button block color="primary" onClick={this.handleSubmit}>Login</Button>
+                    <Button block color="primary">Login</Button>
                 </Form>
 
             </div>
