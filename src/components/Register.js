@@ -58,6 +58,7 @@ export default class Register extends Component {
                             onChange={this.handleChange} />
                     </FormGroup>
                     <Button block color="primary" onClick={this.handleSubmit}>Submit</Button>
+                    <Button block color='warning' onClick={() => this.props.history.push('/')}>Cancel</Button>
                 </Form>
             </div>
         )

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Form, Input, Button, ListGroup, ListGroupItem } from 'reactstrap'
 import Axios from 'axios'
+import config from '../../config'
 
 export default class Category extends Component {
     constructor(props) {
@@ -17,11 +18,12 @@ export default class Category extends Component {
     }
 
     componentDidMount() {
-        Axios.get(`http://localhost:3001/api/categories`, this.state.config)
+        Axios.get(`${config.url}api/categories`, this.state.config)
             .then((res) => {
                 console.log(res);
                 this.setState({ categories: res.data })
             }).catch((err) => console.log(err));
+
     }
 
     handleChange = (e) => {
